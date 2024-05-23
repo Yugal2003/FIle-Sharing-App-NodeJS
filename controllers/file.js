@@ -57,20 +57,53 @@ const uploadFile = async(req,res) => {
         res.json({
             success: false,
             message: "Error While File Uploaded",
-          });
+        });
     }
 }
 
 const generateDynamicLink = async(req,res) => {
-    
+    try {
+        res.json({
+            success: true,
+            message: "Generate Link Successfully",
+        });
+    } 
+    catch (error) {
+        res.json({
+            success: false,
+            message: "Error While Generate Link",
+        });
+    }
 }
 
 const downloadFile = async(req,res) => {
-    
+    try {
+        res.json({
+            success: true,
+            message: "Download File Successfully",
+        });
+    } 
+    catch (error) {
+        res.json({
+            success: false,
+            message: "Error While Download File",
+        });
+    }
 }
 
 const sendFile = async(req,res) => {
-    
+    try {
+        res.json({
+            success: true,
+            message: "Sending File  Successfully",
+        });
+    } 
+    catch (error) {
+        res.json({
+            success: false,
+            message: "Error While Sending File",
+        });
+    }
 }
 
 const fileControllers = {
