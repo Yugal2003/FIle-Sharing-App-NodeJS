@@ -1,8 +1,19 @@
 const multer = require("multer");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const nodemailer = require("nodemailer");
 
 const FileModel = require("../models/file");
+
+const transporter = nodemailer.createTransport({
+    host: "127.0.0.1",
+    port: 1025,
+    secure: false,
+    debug: true, // Enable debug mode
+    logger: true // Enable logger
+});
+
+  
 
 const uploadDirectoryPath = path.join(__dirname, "..", "files");
 
@@ -36,7 +47,7 @@ const uploadFile = async(req,res) => {
             }
 
             //save to DB
-            // console.log(req.file);
+            console.log(req.file);
 
             const newFile = new FileModel({
                 originalFileName : req.file.originalname,
@@ -63,13 +74,25 @@ const uploadFile = async(req,res) => {
 
 const generateDynamicLink = async(req,res) => {
     try {
+        // console.log(req.params.uuid);
+        const fileId = req.params.uuid;
+        const file = await FileModel.findById(fileId)
+
+        //check if file is present in our mongoDB Database 
+        if(!file){
+            return res.status(404).json({
+                success : false,
+                message : "File With Given Id Not Found"
+            })
+        }
         res.json({
             success: true,
             message: "Generate Link Successfully",
+            result: "http://localhost:5050/files/download/" + fileId
         });
     } 
     catch (error) {
-        res.json({
+        res.status(500).json({
             success: false,
             message: "Error While Generate Link",
         });
@@ -78,11 +101,17 @@ const generateDynamicLink = async(req,res) => {
 
 const downloadFile = async(req,res) => {
     try {
-        res.json({
-            success: true,
-            message: "Download File Successfully",
-        });
-    } 
+        const fileId = req.params.uuid;
+        const file = await FileModel.findById(fileId)
+
+        if(!file){
+            // DB Doesn't have this file information
+            return res.end("File with given ID not found");
+        }
+
+        res.download(file.path,file.originalFileName)   
+    }
+
     catch (error) {
         res.json({
             success: false,
@@ -93,6 +122,29 @@ const downloadFile = async(req,res) => {
 
 const sendFile = async(req,res) => {
     try {
+        console.log(req.body);
+        const {fileId,shareTo} = req.body;
+        const downloadableLink = "http://localhost:5050/files/download/" + fileId;
+
+        const info = await transporter.sendMail({
+            from: "do-not-reply@file-sharing.com", // sender address
+            to: shareTo, // list of receivers
+            subject: "A new file has been shared from File Sharing Platform", // Subject line
+            html: `
+              <html>
+              <head>
+              </head>
+              <body>
+                Your friend has shared a new file with you click the below link to download the file
+              <br />
+              <a href="${downloadableLink}">Click Here</a>
+              </body>
+              </html>
+            `,
+          });
+        
+        console.log("Message sent: %s", info.messageId);
+
         res.json({
             success: true,
             message: "Sending File  Successfully",
